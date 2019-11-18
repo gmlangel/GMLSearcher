@@ -1,37 +1,42 @@
-package main;
+package main
 
-import(
+import (
 	"fmt"
-	_ "github.com/kataras/iris"
-	_"github.com/iris-contrib/middleware/cors"
+	"log"
+
 	_ "./src"
 	pro "./src/proxy"
-	"log"
-	m "./src/models"
+	_ "github.com/iris-contrib/middleware/cors"
+	_ "github.com/kataras/iris"
 )
 
-var(
+var (
 	/*sql相关*/
-	sqlType = "mysql";
-	sqlFullURL = "gmlmaster:123456@tcp(39.106.135.11:32306)/GMLResource?charset=utf8";
+	sqlType    = "mysql"
+	sqlFullURL = "gmlmaster:123456@tcp(39.106.135.11:32306)/GMLResource?charset=utf8"
 )
 
-func main(){
+func main() {
 	fmt.Println("GMLSearcher=====>启动中")
-	runLoopChan := make(chan int);
+	runLoopChan := make(chan int)
 	// app := iris.New();
 	// app.Get("test",func(ctx iris.Context){
 	// 	ctx.Write([]byte("测试成功"))
 	// })
 	// fmt.Println("GMLSearcher=====>启动成功")
 	// app.Run(iris.Addr("0.0.0.0:65535"));
-	sqlPro := pro.NewSQL(sqlType,sqlFullURL)
-	sqlPro.OnLinkComplete = func(){
-		log.Println("数据库连接成功");
+	sqlPro := pro.NewSQL(sqlType, sqlFullURL)
+	sqlPro.OnLinkComplete = func() {
+		log.Println("数据库连接成功")
+		//初始化资源加载器
+		resLoader := &pro.Loader{}
+		resLoader.Initial("http://www.9ku.com/", "", "./music/9ku/")
+		resLoader.Start() //开始加载
 	}
-	go sqlPro.Start();
+	go sqlPro.Start()
 	//lm := src.New();
-	
-	<- runLoopChan
+
+	<-runLoopChan
 	fmt.Println("GMLSearcher=====>停止")
+
 }
