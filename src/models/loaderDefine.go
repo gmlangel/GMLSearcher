@@ -9,3 +9,9 @@ type Resource struct {
 	Des       string //描述
 	Save_Path string //存储位置
 }
+
+/*对应HTML中的<a>标签*/
+type Tag_A struct {
+	Href  string
+	Title string
+}

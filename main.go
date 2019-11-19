@@ -29,8 +29,8 @@ func main() {
 	sqlPro.OnLinkComplete = func() {
 		log.Println("数据库连接成功")
 		//初始化资源加载器
-		resLoader := &pro.Loader{}
-		resLoader.Initial("http://www.9ku.com/", "", "./music/9ku/")
+		resLoader := &pro.Loader{SQL: sqlPro}
+		resLoader.Initial("http://www.9ku.com", "/", "./music/9ku/", pro.AnalysisHandler_9Ku, pro.SaveResourceListToSQL_9k)
 		resLoader.Start() //开始加载
 	}
 	go sqlPro.Start()
