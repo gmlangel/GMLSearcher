@@ -1,0 +1,29 @@
+
+-1.通过接口
+https://u.y.qq.com/cgi-bin/musicu.fcg?-=getUCGI025670438061479395&g_tk=5381&loginUin=1152921504788623067&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0&data=%7B%22comm%22%3A%7B%22ct%22%3A24%2C%22cv%22%3A0%7D%2C%22singerList%22%3A%7B%22module%22%3A%22Music.SingerListServer%22%2C%22method%22%3A%22get_singer_list%22%2C%22param%22%3A%7B%22area%22%3A-100%2C%22sex%22%3A-100%2C%22genre%22%3A-100%2C%22index%22%3A-100%2C%22sin%22%3A400%2C%22cur_page%22%3A6%7D%7D%7D
+
+分页获取一批歌手的信息，其中singer_mid用来访问下一个接口
+
+
+0.通过接口
+https://u.y.qq.com/cgi-bin/musicu.fcg?-=getSingerSong3676457483501352&g_tk=5381&loginUin=1152921504788623067&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0&data=%7B%22comm%22%3A%7B%22ct%22%3A24%2C%22cv%22%3A0%7D%2C%22singerSongList%22%3A%7B%22method%22%3A%22GetSingerSongList%22%2C%22param%22%3A%7B%22order%22%3A1%2C%22singerMid%22%3A%22001QQ4d231esWM%22%2C%22begin%22%3A0%2C%22num%22%3A10%7D%2C%22module%22%3A%22musichall.song_list_server%22%7D%7D
+
+查找歌手下面对应的歌曲从songInfo中取mid和name就是 歌曲的songmid和名字了
+
+
+1.网页中的a标签连接为 
+https://y.qq.com/n/yqq/song/xxxx.html中的 xxxx就是歌曲的songmid
+
+2.用songmid替换下面连接中的对应值，可以获得音乐播放信息，
+https://u.y.qq.com/cgi-bin/musicu.fcg?-=getplaysongvkey3359389840108824&g_tk=5381&loginUin=1152921504788623067&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0&data=%7B%22req_0%22%3A%7B%22module%22%3A%22vkey.GetVkeyServer%22%2C%22method%22%3A%22CgiGetVkey%22%2C%22param%22%3A%7B%22guid%22%3A%227068150205%22%2C%22songmid%22%3A%5B%22000BUFxu3ucjzS%22%5D%2C%22songtype%22%3A%5B0%5D%2C%22uin%22%3A%221152921504788623067%22%2C%22loginflag%22%3A1%2C%22platform%22%3A%2220%22%7D%7D%2C%22comm%22%3A%7B%22uin%22%3A%221152921504788623067%22%2C%22format%22%3A%22json%22%2C%22ct%22%3A24%2C%22cv%22%3A0%7D%7D
+
+3.音乐播放信息如下(其中，数组最后一项中的purl中的值 + host地址 http://isure.stream.qqmusic.qq.com/  就是最终的播放地址)：
+{"req":{"data":{"expiration":86400,"freeflowsip":["http://123.157.255.151/amobile.music.tc.qq.com/","http://123.157.255.152/amobile.music.tc.qq.com/","http://123.157.255.153/amobile.music.tc.qq.com/"],"keepalivefile":"C400004TsFuW2mZbRR.m4a?guid=7068150205&vkey=999169A693A1E0253A19C2B017328DC67A01306BCE6777F98A618C6596FE2F3A60E5B593B18F3F1938F670DB0B3ADA7275104E7CE7C603CD&uin=3803&fromtag=3","msg":"ok","retcode":0,"servercheck":"7afc940b71fb85801706b4264e401cc5","sip":["http://123.157.255.151/amobile.music.tc.qq.com/","http://isure.stream.qqmusic.qq.com/","http://ws.stream.qqmusic.qq.com/","http://123.157.255.152/amobile.music.tc.qq.com/","http://123.157.255.153/amobile.music.tc.qq.com/"],"testfile2g":"C400003mAan70zUy5O.m4a?guid=7068150205&vkey=8C9D04BC358A3D038FAA8BDDA64B3EB123204BAF45AB1FC5B72AB11A2DB93B521FE5FC4DD7739FB7E191CF43B295DEF6C08C43A7363E64C3&uin=3803&fromtag=3","testfilewifi":"C400003mAan70zUy5O.m4a?guid=7068150205&vkey=8C9D04BC358A3D038FAA8BDDA64B3EB123204BAF45AB1FC5B72AB11A2DB93B521FE5FC4DD7739FB7E191CF43B295DEF6C08C43A7363E64C3&uin=3803&fromtag=3","uin":"","userip":"111.198.101.131","vkey":"885EEAED736EFA8F286479BFBCA21434D5DE087CED02BC67777A2906A933DE0AFB9E0D2BA1FA1014621534734DFB59C4282C1B1C773D29CD"},"code":0},"req_0":{"data":{"expiration":80400,"login_key":"","midurlinfo":[{"common_downfromtag":0,"errtype":"","filename":"C400002x0F6634mvBQ.m4a","flowfromtag":"","flowurl":"","hisbuy":0,"hisdown":0,"isbuy":0,"isonly":0,"onecan":0,"opi128kurl":"","opi192koggurl":"","opi192kurl":"","opi30surl":"","opi48kurl":"","opi96kurl":"","opiflackurl":"","p2pfromtag":0,"pdl":0,"pneed":0,"pneedbuy":0,"premain":0,"purl":"C400002x0F6634mvBQ.m4a?guid=7068150205&vkey=8F8AA00E3F9D57F54D246028C227344E04770D95F0E473EABED7309F3F8102536FED2F47DC406B93ACEC2E4073A5E0179A9E96A6AFD8EBAB&uin=3803&fromtag=66","qmdlfromtag":0,"result":0,"songmid":"002x0F6634mvBQ","tips":"","uiAlert":0,"vip_downfromtag":0,"vkey":"8F8AA00E3F9D57F54D246028C227344E04770D95F0E473EABED7309F3F8102536FED2F47DC406B93ACEC2E4073A5E0179A9E96A6AFD8EBAB","wififromtag":"","wifiurl":""}],"msg":"111.198.101.131","retcode":0,"servercheck":"3c09c5e67e322aac1d63ae3c25af0102","sip":["http://ws.stream.qqmusic.qq.com/","http://isure.stream.qqmusic.qq.com/"],"testfile2g":"C400003mAan70zUy5O.m4a?guid=7068150205&vkey=A7694291569D5D9220D42368A477A89F01B69C4F01D0E1AAFB9D2E7F9BCBF9341586EF2FBF0B10CDC4EA803165AE1736F9DBFDFEDD803A84&uin=&fromtag=3","testfilewifi":"C400003mAan70zUy5O.m4a?guid=7068150205&vkey=A7694291569D5D9220D42368A477A89F01B69C4F01D0E1AAFB9D2E7F9BCBF9341586EF2FBF0B10CDC4EA803165AE1736F9DBFDFEDD803A84&uin=&fromtag=3","thirdip":["",""],"uin":"","verify_type":0},"code":0},"code":0,"ts":1574249149382}
+
+4.播放地址如下
+http://isure.stream.qqmusic.qq.com/C400002x0F6634mvBQ.m4a?guid=7068150205&vkey=8F8AA00E3F9D57F54D246028C227344E04770D95F0E473EABED7309F3F8102536FED2F47DC406B93ACEC2E4073A5E0179A9E96A6AFD8EBAB&uin=3803&fromtag=66
+
+
+
+
+

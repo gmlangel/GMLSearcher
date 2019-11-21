@@ -184,11 +184,6 @@ func (l *Loader) loadResource(arg *m.Resource) {
 	if nil != err {
 		l.gloger.Println("资源加载错误,", err.Error())
 	}
-	if arg.M_type == ".htm" || arg.M_type == ".html" {
-		//网页资源的超时设置为60秒
-	} else {
-		//其它多媒体资源的超时时间设为
-	}
 	timeo := time.Second * 30 //默认超时时间为30秒
 	if t, isContains := reqTimeOutMap[arg.M_type]; isContains == true {
 		timeo = t //设置超时时间为指定类型对应的时间
