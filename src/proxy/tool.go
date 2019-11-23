@@ -92,3 +92,26 @@ func SaveFileToLocal(basePath string, fileName string, data []byte) (string, err
 		}
 	}
 }
+
+/**
+读取本地文件
+*/
+func ReadLocalFile(basePath string, fileName string) (*os.File, error) {
+	exist := true
+	var f *os.File
+	var fe error
+	filePath := fmt.Sprintf("%s%s", basePath, fileName) //文件完整路径
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		exist = false //判断文件是否存在
+		fe = errors.New(fmt.Sprintf("文件读取失败,%v", err))
+	}
+
+	if exist == true {
+		//如果文件存在则更新内容
+		f, fe = os.OpenFile(filePath, os.O_RDONLY, 0774)
+		if nil != fe {
+			fe = errors.New(fmt.Sprintf("文件读取失败,%v", fe))
+		}
+	}
+	return f, fe
+}

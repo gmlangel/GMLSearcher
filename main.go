@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -20,10 +21,20 @@ var (
 )
 
 func main() {
-	loadResource()
-	return
 	fmt.Println("GMLSearcher=====>启动中")
 	runLoopChan := make(chan int)
+	//读取配置文件
+	f, err := pro.ReadLocalFile("./", "config.json")
+	defer f.Close()
+	var config map[string]interface{}
+	var jsonErr error
+	if err == nil && f != nil {
+		bts, err := ioutil.ReadAll(f)
+		if err == nil {
+			jsonErr = json.Unmarshal(bts, &config)
+		}
+	}
+
 	// app := iris.New();
 	// app.Get("test",func(ctx iris.Context){
 	// 	ctx.Write([]byte("测试成功"))
@@ -33,10 +44,28 @@ func main() {
 	sqlPro := pro.NewSQL(sqlType, sqlFullURL)
 	sqlPro.OnLinkComplete = func() {
 		log.Println("数据库连接成功")
-		//初始化资源加载器
-		resLoader := &pro.Loader{SQL: sqlPro}
-		resLoader.Initial("http://www.9ku.com", "/", "./music/9ku/", pro.AnalysisHandler_9Ku, pro.SaveResourceListToSQL_9k)
-		resLoader.Start() //开始加载
+		//取qq音乐的配置
+		cp := -1
+		maxC := -1
+		if jsonErr == nil {
+			if cof, isOk := config["Reptile_QQMusic"].(map[string]interface{}); isOk == true {
+				if tmpcp, isOk := cof["currentPageId"].(float64); isOk == true {
+					cp = int(tmpcp)
+				}
+
+				if tmpmax, isOk := cof["maxPageId"].(float64); isOk == true {
+					maxC = int(tmpmax)
+				}
+			}
+		}
+		//开始QQ音乐爬虫
+		rep := &pro.Reptile_QQMusic{}
+		rep.Init()
+		rep.Start(sqlPro, cp, maxC)
+		// //初始化资源加载器
+		// resLoader := &pro.Loader{SQL: sqlPro}
+		// resLoader.Initial("http://www.9ku.com", "/", "./music/9ku/", pro.AnalysisHandler_9Ku, pro.SaveResourceListToSQL_9k)
+		// resLoader.Start() //开始加载
 	}
 	go sqlPro.Start()
 	//lm := src.New();

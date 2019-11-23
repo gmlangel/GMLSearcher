@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,23 +17,22 @@ var (
 	//并行下载数
 	downLoadThreads int = 10
 	//数据库同步时间
-	syncSQLTime   time.Duration            = time.Second * 120
-	reqTimeOutMap map[string]time.Duration = map[string]time.Duration{
-		".htm":  time.Second * 30,
-		".html": time.Second * 30,
-		".mp3":  time.Minute * 5,
-		".m4a":  time.Minute * 5,
-		".mp4":  time.Minute * 60}
+	syncSQLTime time.Duration = time.Second * 120
 )
+
+type ReptileInterface interface {
+
+	//自定义解析流程
+	AnalysisHandler(bts []byte, l *Loader, res *m.Resource)
+
+	//自定义数据库处理流程
+	SaveResourceListToSQL(l *Loader)
+}
 
 /**
 加载器定义
 */
 type Loader struct {
-	//主站域名
-	BaseHost string
-	//主页地址
-	IndexPage string
 	//待加载的资源Key数组
 	WaitReqHostArr []m.MD5Key
 	//已完成加载的资源KEY数组
@@ -44,37 +44,22 @@ type Loader struct {
 	//本地存储目录
 	LocalDirectoryPath string
 
-	resChan                      chan int
-	LoadChan                     chan int //同一时间的资源加载请求并发数
-	SQL                          m.SQLInterface
-	gloger                       *log.Logger
-	glogerFile                   *os.File
-	resourceRecordLoger          *log.Logger
-	resourceRecordLogerFile      *os.File //存已经加载完毕的所有 多媒体资源的列表
-	AnalysisHandler              func([]byte, *Loader, *m.Resource)
-	SaveResourceListToSQLHandler func(*Loader)
-	ResourceListStr              string
+	resChan                 chan int
+	LoadChan                chan int //同一时间的资源加载请求并发数
+	SQL                     m.SQLInterface
+	gloger                  *log.Logger
+	glogerFile              *os.File
+	resourceRecordLoger     *log.Logger
+	resourceRecordLogerFile *os.File //存已经加载完毕的所有 多媒体资源的列表
+	reptile                 ReptileInterface
+	reqTimeOutMap           map[string]time.Duration
+	ResourceListStr         string
 }
 
-// type LoaderInterface interface {
-// 	//初始化
-// 	Initial(_BaseHost string, _IndexPage string)
-
-// 	//加载资源
-// 	// @param name 资源名称
-// 	// @param path 资源下载地址
-// 	// @param m_type 资源类型 如：.mp3 .mp4
-// 	// @param des 资源描述 如：作者xxx
-// 	LoadResource(name string, path string, m_type string, des string)
-// }
-
-func (l *Loader) Initial(_BaseHost string, _IndexPage string, _baseSavePath string, _analysisHandler func([]byte, *Loader, *m.Resource), _saveResourceListToSQLHandler func(*Loader)) {
-	l.BaseHost = _BaseHost
-	l.IndexPage = _IndexPage
-	l.AnalysisHandler = _analysisHandler
-	l.SaveResourceListToSQLHandler = _saveResourceListToSQLHandler
+func (l *Loader) Initial(_mainReq []*m.Resource, _baseSavePath string, _reqTimeOutMap map[string]time.Duration, _reptile ReptileInterface) {
 	l.LocalDirectoryPath = _baseSavePath
-
+	l.reptile = _reptile
+	l.reqTimeOutMap = _reqTimeOutMap
 	l.LoadedReqHostArr = []m.MD5Key{}
 	l.FaildReqHostArr = []m.MD5Key{}
 	l.resChan = make(chan int, 1)
@@ -84,11 +69,11 @@ func (l *Loader) Initial(_BaseHost string, _IndexPage string, _baseSavePath stri
 		l.LoadChan <- 1
 	}
 	//默认将_BaseHost地址，作为第一个资源，填充到资源列表
-	urlPath := fmt.Sprintf("%s%s", _BaseHost, _IndexPage)
-	md5 := m.MD5Key(MakeMD5(urlPath))
-	res := &m.Resource{MD5: md5, Name: _IndexPage, Path: urlPath, M_type: ".html"}
-	l.ResourceMap = map[m.MD5Key]*m.Resource{md5: res}
-	l.WaitReqHostArr = []m.MD5Key{md5}
+	for _, v := range _mainReq {
+		md5 := v.MD5
+		l.ResourceMap = map[m.MD5Key]*m.Resource{md5: v}
+		l.WaitReqHostArr = []m.MD5Key{md5}
+	}
 	//初始化日志服务
 	tlog, tf, _ := MakeLogger(_baseSavePath, "loaderlog")
 	l.gloger = tlog
@@ -131,7 +116,7 @@ func (l *Loader) StopAndDestroy() {
 	l.LoadedReqHostArr = nil
 	l.FaildReqHostArr = nil
 	l.SQL = nil
-	l.AnalysisHandler = nil
+	l.reptile = nil
 
 	//清理日志相关
 	l.gloger = nil
@@ -156,7 +141,6 @@ func (l *Loader) runloopLoadURL() {
 		for i, v := range l.WaitReqHostArr {
 			if item, isContains := l.ResourceMap[v]; isContains == true && i < j {
 				fmt.Println("准备下载资源", item.Name, item.Path)
-				l.resourceRecordLoger.Println(item.MD5, item.Path)
 				go l.loadResource(item)
 			}
 		}
@@ -177,6 +161,13 @@ func (l *Loader) runloopLoadURL() {
 func (l *Loader) loadResource(arg *m.Resource) {
 	_, isOk := <-l.LoadChan
 	if isOk == false {
+		arg.Stat = "NORMAL"
+		logBytes, jsonErr := json.Marshal(arg)
+		if nil != jsonErr {
+			l.resourceRecordLoger.Println(arg.MD5, jsonErr.Error())
+		} else {
+			l.resourceRecordLoger.Println(string(logBytes))
+		}
 		return
 	}
 	url := arg.Path
@@ -185,7 +176,7 @@ func (l *Loader) loadResource(arg *m.Resource) {
 		l.gloger.Println("资源加载错误,", err.Error())
 	}
 	timeo := time.Second * 30 //默认超时时间为30秒
-	if t, isContains := reqTimeOutMap[arg.M_type]; isContains == true {
+	if t, isContains := l.reqTimeOutMap[arg.M_type]; isContains == true {
 		timeo = t //设置超时时间为指定类型对应的时间
 	}
 	fmt.Println("设置超时时间", arg.M_type, "=", timeo)
@@ -194,6 +185,13 @@ func (l *Loader) loadResource(arg *m.Resource) {
 	if err != nil {
 		// handle error
 		l.gloger.Println("资源", arg.Name, " 请求资源出错:", err.Error())
+		arg.Stat = "ERR"
+		logBytes, jsonErr := json.Marshal(arg)
+		if nil != jsonErr {
+			l.resourceRecordLoger.Println(arg.MD5, jsonErr.Error())
+		} else {
+			l.resourceRecordLoger.Println(string(logBytes))
+		}
 		l.LoadChan <- 1
 		return
 	}
@@ -203,20 +201,52 @@ func (l *Loader) loadResource(arg *m.Resource) {
 	if err != nil {
 		// handle error
 		l.gloger.Println("资源", arg.Name, " 内容读取失败:", err.Error())
+		arg.Stat = "ERR"
+		logBytes, jsonErr := json.Marshal(arg)
+		if nil != jsonErr {
+			l.resourceRecordLoger.Println(arg.MD5, jsonErr.Error())
+		} else {
+			l.resourceRecordLoger.Println(string(logBytes))
+		}
 		l.LoadChan <- 1
 		return
 	}
 	_, isOk2 := <-l.resChan
 	if false == isOk2 {
+		arg.Stat = "ERR"
+		logBytes, jsonErr := json.Marshal(arg)
+		if nil != jsonErr {
+			l.resourceRecordLoger.Println(arg.MD5, jsonErr.Error())
+		} else {
+			l.resourceRecordLoger.Println(string(logBytes))
+		}
 		l.LoadChan <- 1
 		return
 	}
 	//判断类型，做相应处理
-	if nil != l.AnalysisHandler {
-		l.AnalysisHandler(body, l, arg)
+	if nil != l.reptile {
+		l.reptile.AnalysisHandler(body, l, arg)
+		if arg.Stat != "" {
+			if logBytes, jsonErr := json.Marshal(arg); nil != jsonErr {
+				l.resourceRecordLoger.Println(arg.MD5, jsonErr.Error())
+			} else {
+				l.resourceRecordLoger.Println(string(logBytes))
+			}
+		}
 	}
 	l.resChan <- 1
 	l.LoadChan <- 1
+}
+
+/**
+将resource添加到待加载队列
+*/
+func (l *Loader) AddResourceToLoadQueue(md5 m.MD5Key, res *m.Resource) {
+	if _, isOk := l.ResourceMap[md5]; isOk == false {
+		//如果资源不存在，则添加
+		l.ResourceMap[md5] = res
+		l.WaitReqHostArr = append(l.WaitReqHostArr, md5)
+	}
 }
 
 /**
@@ -229,8 +259,8 @@ func (l *Loader) runloopSyncSQL() {
 			break
 		}
 		//写入数据库
-		if l.SaveResourceListToSQLHandler != nil {
-			l.SaveResourceListToSQLHandler(l)
+		if l.reptile != nil {
+			l.reptile.SaveResourceListToSQL(l)
 		}
 		//清空LoadedReqHostArr
 		l.LoadedReqHostArr = l.LoadedReqHostArr[0:0]
