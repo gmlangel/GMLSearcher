@@ -124,7 +124,7 @@ func (reptile *Reptile_QQMusic) AnalysisHandler(bts []byte, l *Loader, res *m.Re
 									if val, isOK3 := tv["singer_name"].(string); isOK3 == true {
 										reptile.singerMap[k] = val
 										//生成待加载的歌手信息资源
-										url = reptile.makeGetSongInfoBySingerInterface(reptile.uin, k, 30) //默认读取该歌手的30首歌
+										url = reptile.makeGetSongInfoBySingerInterface(reptile.uin, k, 150) //默认读取该歌手的150首歌
 										md5 = m.MD5Key(MakeMD5(url))
 										nres = &m.Resource{MD5: md5, Path: url, M_type: "makeGetSongInfoBySingerInterface", Des: val}
 										l.AddResourceToLoadQueue(md5, nres)
@@ -186,7 +186,7 @@ func (reptile *Reptile_QQMusic) AnalysisHandler(bts []byte, l *Loader, res *m.Re
 								if nv, isOk := v.(map[string]interface{}); isOk == true {
 									if purl, isOk := nv["purl"].(string); isOk == true {
 										//获得了歌曲播放地址
-										purl = strings.Replace(purl, "\u0026", "&", -1)
+										purl = strings.Replace(purl, "\\u0026", "&", -1)
 										url = host + purl
 										md5 = m.MD5Key(MakeMD5(url))
 										nres = &m.Resource{MD5: md5, Path: url, M_type: ".m4a", Des: des, Name: songName}
