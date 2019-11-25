@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -114,4 +115,23 @@ func ReadLocalFile(basePath string, fileName string) (*os.File, error) {
 		}
 	}
 	return f, fe
+}
+
+/**
+进行base64编码
+*/
+func EncodeBase64(input []byte) string {
+	encodeString := base64.StdEncoding.EncodeToString(input)
+	return encodeString
+}
+
+/**
+解码base64
+*/
+func DecodeBase64(encodeString string) []byte {
+	decodeBytes, err := base64.StdEncoding.DecodeString(encodeString)
+	if err != nil {
+		fmt.Println("DecodeBase64失败，原因:", err.Error())
+	}
+	return decodeBytes
 }

@@ -222,15 +222,22 @@ func (reptile *Reptile_QQMusic) AnalysisHandler(bts []byte, l *Loader, res *m.Re
 }
 
 func (reptile *Reptile_QQMusic) SaveResourceListToSQL(l *Loader) {
-	sqlstr := "insert `music_0`(`m_name`,`source_path`,`save_path`,`m_type`,`lastUpdate`,`des`) values"
+	sqlstr := "insert `music_0`(`m_name`,`save_path`,`m_type`,`lastUpdate`,`des`) values"
 	argstr := "" //;
-	gmlformat := "('%s','%s','%s','%s',%d,'%s')"
+	gmlformat := "('%s','%s','%s',%d,'%s')"
 	timeValue := time.Now().Unix() / 1000
+	m_name := ""
+	save_path := ""
+	des := ""
 	//将LoadedReqHostArr写入数据库
 	for _, key := range l.LoadedReqHostArr {
 		if item, isOk := l.ResourceMap[key]; isOk == true && item.M_type == ".m4a" {
+			//字符传的特殊处理，防止字符传中含有特殊字符，造成写库失败
+			m_name = EncodeBase64([]byte(item.Name))
+			save_path = EncodeBase64([]byte(item.Save_Path))
+			des = EncodeBase64([]byte(item.Des))
 			//遍历多媒体资源，将之写入数据库
-			str := fmt.Sprintf(gmlformat, item.Name, item.Path, item.Save_Path, item.M_type, timeValue, item.Des)
+			str := fmt.Sprintf(gmlformat, m_name, save_path, item.M_type, timeValue, des)
 			if argstr == "" {
 				argstr = str
 			} else {
