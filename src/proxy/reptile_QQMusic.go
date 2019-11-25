@@ -50,7 +50,6 @@ func (reptile *Reptile_QQMusic) Init() {
 	reptile.maxPageID = 1
 	reptile.uin = "1152921504788623067"
 	reptile.uid = "7068150205"
-	reptile.baseSavePath = "./music/QQMusic/" //文件存储路径
 	reptile.singerMap = map[string]string{}
 	//fmt.Println(reptile.makeGetAllSingerInfoInterface(uid))
 }
@@ -63,6 +62,7 @@ func (reptile *Reptile_QQMusic) Start(sqlPro *SQLProxy, cp int, cpmax int) {
 	if cpmax > -1 {
 		reptile.maxPageID = cpmax
 	}
+	reptile.baseSavePath = fmt.Sprintf("./music/QQMusic_%d_%d/", reptile.currentPageID, reptile.maxPageID) //文件存储路径
 	//初始化资源加载器
 	resLoader := &Loader{SQL: sqlPro}
 	var url string
